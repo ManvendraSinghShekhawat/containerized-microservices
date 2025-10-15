@@ -1,1 +1,49 @@
 
+name: Build and Deploy to ECR/ECS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+      ECR_USER: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push user-service
+        run: |
+          IMAGE_NAME=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/user-service:latest
+          docker build -t user-service ./user-service
+          docker tag user-service $IMAGE_NAME
+          docker push $IMAGE_NAME
+
+      - name: Build and push product-service
+        run: |
+          IMAGE_NAME=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/product-service:latest
+          docker build -t product-service ./product-service
+          docker tag product-service $IMAGE_NAME
+          docker push $IMAGE_NAME
+
+      - name: Deploy to ECS (update service)
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ecs/task-def.json
+          service: your-ecs-service-name
+          cluster: your-ecs-cluster-name
+          wait-for-service-stability: true
