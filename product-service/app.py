@@ -7,7 +7,7 @@ PRODUCTS = [
     {"id": 2, "name": "Gadget"}
 ]
 
-@app.route("/products/health")
+@app.route("/health")
 def health():
     return jsonify({"status":"ok","service":"product-service"})
 
