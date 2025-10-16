@@ -42,79 +42,90 @@ cd containerized-microservices
 
 
 
-🚀 **Deployment Guide (Manual AWS Setup)**
+## 🚀 **Deployment Guide (Manual AWS Setup)**
 
-**Step 1 — Create ECS Cluster**
+Follow these steps to deploy your containerized microservices on **AWS ECS Fargate** behind an **Application Load Balancer (ALB)**.
 
-Launch Type: Fargate
+---
 
-Name: microservices-cluster
+### 🛰️ **Step 1 — Create ECS Cluster**
 
-**Step 2 — Create Target Groups**
-Name	Target Type	Port	Health Check Path
-tg-users	IP	5000	/health
-tg-products	IP	5001	/health
+- Navigate to **ECS Console → Clusters → Create Cluster**
+- Choose **Launch Type:** `Fargate`
+- Set **Cluster Name:** `microservices-cluster`
+- Click **Create**
 
+---
 
-**Step 3 — Create Application Load Balancer**
+### 🎯 **Step 2 — Create Target Groups**
 
-Scheme: Internet-facing
+Create two target groups for your services.
 
-Protocol: HTTP (80)
+| Target Group | Target Type | Port | Health Check Path |
+|---------------|--------------|------|-------------------|
+| `tg-users` | IP | 5000 | `/health` |
+| `tg-products` | IP | 5001 | `/health` |
 
-Add both subnets in default VPC
+💡 *Tip:* Use the same VPC as your ECS cluster. Keep the protocol as **HTTP** and target type as **IP** for Fargate.
 
-Allow inbound port 80
+---
 
-Set default target group = tg-users
+### 🌐 **Step 3 — Create Application Load Balancer (ALB)**
 
-Then, under Listeners → Edit rules, add:
+- Go to **EC2 → Load Balancers → Create Load Balancer → Application Load Balancer**
+- **Scheme:** Internet-facing  
+- **Protocol:** HTTP (Port 80)  
+- **Availability Zones:** Select at least 2 subnets in your default VPC  
+- **Security Group:** Allow inbound port **80 (HTTP)** from `0.0.0.0/0`  
+- **Default Target Group:** `tg-users`
 
-/users → Forward to tg-users
+Once created:
+1. Go to your ALB → **Listeners** tab  
+2. Click **Edit rules**  
+3. Add path-based routing rules:
 
-/products → Forward to tg-products
+| Path Pattern | Action |
+|---------------|---------|
+| `/users*` | Forward to `tg-users` |
+| `/products*` | Forward to `tg-products` |
 
-**Step 4 — Create ECS Services**
+📘 *This ensures traffic to `/users` and `/products` is routed to their respective microservices.*
 
-For each microservice:
+---
 
-Task Definition: respective one (user or product)
+### 🧱 **Step 4 — Create ECS Services**
 
-Launch Type: Fargate
+For each service, create an ECS Service linked to your ALB:
 
-Load Balancer: select ALB created above
+#### 🧩 User Service
+- **Task Definition:** `user-service`
+- **Launch Type:** `Fargate`
+- **Cluster:** `microservices-cluster`
+- **Load Balancer:** Select your ALB
+- **Listener Port:** `80`
+- **Target Group:** `tg-users`
 
-Listener Port: 80
+#### 🧩 Product Service
+- **Task Definition:** `product-service`
+- **Launch Type:** `Fargate`
+- **Cluster:** `microservices-cluster`
+- **Load Balancer:** Select your ALB
+- **Listener Port:** `80`
+- **Target Group:** `tg-products`
 
-Target Group: corresponding one
+---
 
-**Step 5 — Verify**
+### 🔍 **Step 5 — Verify Deployment**
 
-Visit your ALB DNS URL:
+After both services are running, go to your **ALB DNS name** in the AWS console and test:
 
+```bash
 http://<ALB-DNS>/users
-
 http://<ALB-DNS>/products
 
 
 
-🧩 **Directory Overview**
-
-containerized-microservices/
-├── user-service/          # Flask app for users
-├── product-service/       # Flask app for products
-├── ecs/                   # ECS & ALB setup files
-├── docs/                  # Documentation & diagrams
-└── docker-compose.yml     # Local testing setup
-
-🧪 **Local Testing**
-
-To test health endpoints:
-
-curl http://localhost:5000/health
-curl http://localhost:5001/health
-
-👨‍💻 **Author**
+👨‍💻 Author
 
 Manvendra Singh Shekhawat
 📧 manvendrasinghshekhawat324@gmail.com
