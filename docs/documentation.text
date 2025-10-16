@@ -1,1 +1,154 @@
 
+
+============================================================
+📘 Project Documentation — Containerized Microservices on AWS ECS
+============================================================
+
+Author: Manvendra Singh Shekhawat
+Email: manvendrasinghshekhawat324@gmail.com
+------------------------------------------------------------
+
+## 🚀 Project Overview
+
+This project demonstrates how to containerize and deploy multiple microservices using **Amazon ECS (Elastic Container Service)** with **AWS Fargate** and an **Application Load Balancer (ALB)** — without using Terraform or any IaC tool.  
+It is a hands-on implementation designed to help understand microservice deployment, container orchestration, and load balancing in AWS.
+
+### 🧠 Objective
+- Learn how to deploy microservices in a serverless container environment (Fargate).
+- Understand networking and routing using Application Load Balancer (ALB).
+- Gain practical experience in ECS service creation, scaling, and verification.
+
+### 🧩 Microservices
+1. **User Service** → Flask application running on port `5000`
+2. **Product Service** → Flask application running on port `5001`
+
+Both applications are containerized with Docker and deployed independently as ECS services.
+
+------------------------------------------------------------
+
+## ⚙️ Step-by-Step Deployment Guide (Manual AWS Setup)
+
+### Step 1 — Create ECS Cluster
+- Navigate to **ECS Console → Clusters → Create Cluster**
+- Choose **Launch Type: Fargate**
+- Cluster Name: `microservices-cluster`
+
+✅ *Purpose:* This cluster acts as the logical boundary where our Fargate services will run.
+
+------------------------------------------------------------
+
+### Step 2 — Create Target Groups
+Create two target groups to route traffic to the correct service.
+
+| Name         | Target Type | Port | Health Check Path |
+|---------------|-------------|------|-------------------|
+| tg-users      | IP          | 5000 | /health           |
+| tg-products   | IP          | 5001 | /health           |
+
+✅ *Purpose:* Target groups maintain registered service IPs and perform health checks to ensure healthy traffic routing.
+
+------------------------------------------------------------
+
+### Step 3 — Create Application Load Balancer (ALB)
+- Go to **EC2 → Load Balancers → Create Load Balancer → Application Load Balancer**
+- **Scheme:** Internet-facing  
+- **Protocol:** HTTP (port 80)  
+- Add **at least two subnets** in your default VPC  
+- Create a new **security group** that allows inbound port **80** from anywhere.
+
+After ALB creation:
+- Default target group: `tg-users`
+- Go to **Listeners → Edit Rules** and add routing rules:
+  - `/users*` → Forward to `tg-users`
+  - `/products*` → Forward to `tg-products`
+
+✅ *Purpose:* The ALB routes incoming HTTP requests to the appropriate microservice based on URL path.
+
+------------------------------------------------------------
+
+### Step 4 — Create ECS Services
+For each microservice, create an ECS service.
+
+#### a. User Service
+- Task Definition: `user-service`
+- Launch Type: **Fargate**
+- Service Name: `user-service`
+- Load Balancer: Select the ALB created above
+- Listener Port: 80
+- Target Group: `tg-users`
+- Desired Count: 1
+
+#### b. Product Service
+- Task Definition: `product-service`
+- Launch Type: **Fargate**
+- Service Name: `product-service`
+- Load Balancer: Same ALB
+- Listener Port: 80
+- Target Group: `tg-products`
+- Desired Count: 1
+
+✅ *Purpose:* ECS services ensure that containers run continuously and restart automatically if they fail.
+
+------------------------------------------------------------
+
+### Step 5 — Verify Deployment
+
+After services are running successfully, open your ALB’s DNS name in a browser:
+
+```
+http://<ALB-DNS>/users
+http://<ALB-DNS>/products
+```
+
+You should see the respective microservice responses.
+
+✅ *Result:* Requests hitting the ALB are automatically routed to the correct ECS service.
+
+------------------------------------------------------------
+
+## 🧩 Directory Overview
+
+```
+containerized-microservices/
+├── user-service/          # Flask app for users
+├── product-service/       # Flask app for products
+├── ecs/                   # ECS & ALB setup files
+├── docs/                  # Documentation & diagrams
+└── docker-compose.yml     # Local testing setup
+```
+
+------------------------------------------------------------
+
+## 🧪 Local Testing
+
+You can test both services locally using Docker Compose.
+
+Run containers locally:
+```
+docker-compose up --build
+```
+
+Check health endpoints:
+```
+curl http://localhost:5000/health
+curl http://localhost:5001/health
+```
+
+✅ *Purpose:* This ensures both services are functional before deploying to ECS.
+
+------------------------------------------------------------
+
+## 🧠 Key Takeaways
+- ECS Fargate allows serverless container deployment without managing EC2 instances.
+- ALB efficiently routes traffic to microservices using path-based routing.
+- Target Groups and Health Checks maintain high availability and fault tolerance.
+- Modular architecture supports independent scaling of microservices.
+
+------------------------------------------------------------
+
+## 👨‍💻 Author Information
+
+**Author:** Manvendra Singh Shekhawat  
+**Email:** manvendrasinghshekhawat324@gmail.com  
+
+------------------------------------------------------------
