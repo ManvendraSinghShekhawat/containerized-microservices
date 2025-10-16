@@ -26,7 +26,7 @@ The project demonstrates how to host multiple Flask-based microservices (User & 
 |------|----------|
 | AWS ECS Fargate | Container orchestration |
 | AWS ALB | Routing to target groups |
-| Docker | Containerization |
+| AWS ECS | Containerization |
 | Flask | Python microservice framework |
 | CloudWatch | Monitoring & logging |
 
