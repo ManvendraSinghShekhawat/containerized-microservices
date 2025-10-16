@@ -1,0 +1,104 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "The template used to create an ECS Service from the ECS Console.",
+    "Parameters": {
+        "ECSClusterName": {
+            "Type": "String",
+            "Default": "cluster_name"
+        },
+        "ECSServiceName": {
+            "Type": "String",
+            "Default": "user-service-Cluster_Service_name"
+        },
+        "SecurityGroupIDs": {
+            "Type": "CommaDelimitedList",
+            "Default": "SEcurity_Group"
+        },
+        "SubnetIDs": {
+            "Type": "CommaDelimitedList",
+            "Default": "subnet-0281215f1fcb7d838,subnet-0682ca29ea20e6aa0,subnet-0b58b52f96fe9e6f4"
+        },
+        "VpcID": {
+            "Type": "String",
+            "Default": "Your_VPC"
+        },
+        "LoadBalancerName": {
+            "Type": "String",
+            "Default": "ALB_name"
+        }
+    },
+    "Resources": {
+        "ECSService": {
+            "Type": "AWS::ECS::Service",
+            "Properties": {
+                "Cluster": "cluster_name",
+                "CapacityProviderStrategy": [
+                    {
+                        "CapacityProvider": "FARGATE",
+                        "Base": 0,
+                        "Weight": 1
+                    }
+                ],
+                "TaskDefinition": "arn:aws:ecs:eu-west-1:727117752890:task-definition/user-service:1",
+                "ServiceName": "user-service-service-tgnhvhte",
+                "SchedulingStrategy": "REPLICA",
+                "DesiredCount": 1,
+                "AvailabilityZoneRebalancing": "ENABLED",
+                "LoadBalancers": [
+                    {
+                        "ContainerName": "user-service",
+                        "ContainerPort": 5000,
+                        "LoadBalancerName": {
+                            "Ref": "AWS::NoValue"
+                        },
+                        "TargetGroupArn": "arn:aws:elasticloadbalancing:eu-west-1:AWS_Account_ID:targetgroup/tg-users/a9327be49f4d46e4"
+                    }
+                ],
+                "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                        "AssignPublicIp": "ENABLED",
+                        "SecurityGroups": {
+                            "Ref": "SecurityGroupIDs"
+                        },
+                        "Subnets": {
+                            "Ref": "SubnetIDs"
+                        }
+                    }
+                },
+                "PlatformVersion": "LATEST",
+                "DeploymentConfiguration": {
+                    "DeploymentCircuitBreaker": {
+                        "Enable": true,
+                        "Rollback": true
+                    },
+                    "Strategy": "ROLLING",
+                    "MaximumPercent": 200,
+                    "MinimumHealthyPercent": 100
+                },
+                "DeploymentController": {
+                    "Type": "ECS"
+                },
+                "ServiceConnectConfiguration": {
+                    "Enabled": false
+                },
+                "Tags": [],
+                "EnableECSManagedTags": true,
+                "EnableExecuteCommand": false
+            }
+        }
+    },
+    "Outputs": {
+        "ClusterName": {
+            "Description": "The cluster used to create the service.",
+            "Value": {
+                "Ref": "ECSClusterName"
+            }
+        },
+        "ECSService": {
+            "Description": "The created service.",
+            "Value": {
+                "Ref": "ECSService"
+            }
+        }
+    }
+}
