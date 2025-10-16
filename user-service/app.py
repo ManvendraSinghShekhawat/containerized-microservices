@@ -7,7 +7,7 @@ USERS = [
     {"id": 2, "name": "Bob"}
 ]
 
-@app.route("/users/health")
+@app.route("/health")
 def health():
     return jsonify({"status":"ok","service":"user-service"})
 
